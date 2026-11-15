@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "따라미 (ddarami)",
+  "short_name": "따라미",
+  "version": "0.1.0",
+  "description": "유튜브에서 구간을 반복하고 배속과 드럼 템포를 맞춰 악기를 연습하세요.",
+  "permissions": ["storage"],
+  "content_scripts": [{
+    "matches": ["https://www.youtube.com/*"],
+    "js": ["core.js", "drums.js", "content.js"],
+    "run_at": "document_idle"
+  }],
+  "action": {"default_title": "따라미 사용 안내", "default_popup": "popup.html"}
+}

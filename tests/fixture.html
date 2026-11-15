@@ -1,0 +1,10 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>따라미 UI 검증용</title><style>body{margin:0;background:#0e1118;color:#e6eaf2;font:16px system-ui;padding:48px}h1{font-size:30px}#movie_player{background:linear-gradient(130deg,#233a36,#151c29);border:1px solid #40534e;border-radius:18px;width:calc(100vw - 480px);height:50vh;display:grid;place-items:center}video{width:100%;height:100%}.notice{position:absolute;top:210px;left:90px;pointer-events:none}input{padding:10px}button{padding:10px;margin:5px}</style>
+<h1>따라미 · 테스트 무대</h1><p>가짜 미디어를 사용하는 UI 테스트입니다. 실제 유튜브 검증이 아닙니다.</p><ytd-watch-flexy><div id="movie_player"><video class="html5-main-video"></video><div class="notice">♬ ddarami — 120 BPM<br>비디오 상태를 모의 실행합니다.</div></div><div id="below"></div></ytd-watch-flexy><p><input placeholder="단축키 입력 방지 테스트"></p><button onclick="navigateFixture('second-video')">다음 영상</button><button onclick="document.querySelector('#movie_player').classList.toggle('ad-showing')">광고 전환</button>
+<script>
+const store={};window.chrome={storage:{local:{async get(key){return {[key]:store[key]};},async set(values){Object.assign(store,structuredClone(values));}}}};window.fixtureStore=store;
+history.replaceState({},'', '/watch?v=fixture-video');
+const v=document.querySelector('video');let t=0,paused=true,rate=1;
+Object.defineProperties(v,{duration:{get:()=>180},readyState:{get:()=>4},currentTime:{get:()=>t,set:x=>{t=x;queueMicrotask(()=>v.dispatchEvent(new Event('seeked')));}},paused:{get:()=>paused},seeking:{get:()=>false},playbackRate:{get:()=>rate,set:x=>{rate=x;v.dispatchEvent(new Event('ratechange'));}}});
+v.play=async()=>{paused=false;v.dispatchEvent(new Event('play'));};v.pause=()=>{paused=true;v.dispatchEvent(new Event('pause'));};setInterval(()=>{if(!paused){t+=0.05*rate;if(t>=180){t=180;paused=true;v.dispatchEvent(new Event('ended'));}}},50);window.mockVideo=v;
+window.navigateFixture=id=>{history.pushState({},'',`/watch?v=${id}`);document.dispatchEvent(new Event('yt-navigate-finish'));};
+</script><script src="/core.js"></script><script src="/drums.js"></script><script src="/content.js"></script></html>

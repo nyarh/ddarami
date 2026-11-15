@@ -1,0 +1,7 @@
+{
+  "name": "ddarami",
+  "version": "0.1.0",
+  "private": true,
+  "description": "따라미 (ddarami) · 유튜브 악기 연습 확장 프로그램",
+  "scripts": { "test": "node --test tests/*.test.cjs", "check": "node --check core.js && node --check drums.js && node --check content.js", "package": "python3 scripts/package.py" }
+}

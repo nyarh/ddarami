@@ -96,7 +96,7 @@
     <header class="panel-header">
       <h2 title="끌어서 패널 이동">따라미</h2>
       <button id="resetPosition" aria-label="패널 위치 초기화" title="오른쪽 위로 이동" hidden>위치 초기화</button>
-      <button class="transport" id="play" aria-keyshortcuts="Alt+Shift+Space">재생</button>
+      <button class="transport" id="play" aria-keyshortcuts="Space" title="현재 모드 시작/정지 ( 단축키: Space )">재생</button>
     </header>
     <div class="body" id="controls">
       <div class="modes" role="group" aria-label="연습 모드">
@@ -107,21 +107,21 @@
         <div class="row">
           <h3 id="speedTitle" class="grow">영상 속도</h3>
           <div class="stepper">
-            <button id="slower" aria-label="배속 0.05 감소" title="0.05× 느리게 (Alt+Shift+←)">−</button>
+            <button id="slower" aria-label="배속 0.05 감소" aria-keyshortcuts="-" title="0.05× 느리게 ( 단축키: - )">−</button>
             <span class="speed"><span id="rate">1.00</span>×</span>
-            <button id="faster" aria-label="배속 0.05 증가" title="0.05× 빠르게 (Alt+Shift+→)">+</button>
+            <button id="faster" aria-label="배속 0.05 증가" aria-keyshortcuts="=" title="0.05× 빠르게 ( 단축키: = )">+</button>
           </div>
         </div>
         <div class="presets" role="group" aria-label="배속 프리셋">${ratePresets.map(rate => `<button data-rate="${rate}">${rate}×</button>`).join('')}</div>
       </section>
       <section class="section" id="videoTools" aria-labelledby="loopTitle">
-        <div class="row"><h3 class="grow" id="loopTitle">구간 반복</h3><button id="loop" class="loop-switch" role="switch" aria-label="구간 반복" aria-checked="false" aria-keyshortcuts="Alt+Shift+L">꺼짐</button></div>
+        <div class="row"><h3 class="grow" id="loopTitle">구간 반복</h3><button id="loop" class="loop-switch" role="switch" aria-label="구간 반복" aria-checked="false" aria-keyshortcuts="&#92;">꺼짐</button></div>
         <div class="row boundary">
-          <button id="setStart" title="현재 재생 위치를 시작 지점으로 지정">시작 지정</button>
+          <button id="setStart" aria-keyshortcuts="[" title="현재 재생 위치를 시작 지점으로 지정 ( 단축키: [ )">시작 지정</button>
           <input class="grow" id="a" aria-label="시작 시간" autocomplete="off" spellcheck="false" value="0:00.00">
         </div>
         <div class="row boundary">
-          <button id="setEnd" title="현재 재생 위치를 종료 지점으로 지정하고 반복 켜기">종료 지정</button>
+          <button id="setEnd" aria-keyshortcuts="]" title="현재 재생 위치를 종료 지점으로 지정하고 반복 켜기 ( 단축키: ] )">종료 지정</button>
           <input class="grow" id="b" aria-label="종료 시간" placeholder="미지정" autocomplete="off" spellcheck="false">
         </div>
         <div class="time"><span>현재 위치</span><span id="position">영상 대기 중</span></div>
@@ -161,7 +161,7 @@
     const canLoop = validLoop();
     $('#loop').textContent = state.loop ? '켜짐' : '꺼짐';
     $('#loop').setAttribute('aria-checked', String(state.loop));
-    $('#loop').title = canLoop ? '구간 반복 전환 (Alt+Shift+L)' : '시작과 종료 지점을 지정하세요.';
+    $('#loop').title = (canLoop ? '구간 반복 정지/재개' : '시작과 종료 지점을 지정하세요.') + ' ( 단축키: \\ )';
     $('#videoTools').hidden = mode === 'drums';
     $('#speedTitle').textContent = mode === 'video' ? '영상 속도' : '연습 속도';
     $('#tempoBox').hidden = mode !== 'drums';
@@ -455,8 +455,39 @@
   }
   $('#volume').oninput = event => { if (drag?.input !== event.target) applyVolume(); };
   $('#pattern').onchange=e=>{state.pattern=e.target.value;updateDrums();store();};
-  function onKey(e) { if(e.repeat||!e.altKey||!e.shiftKey||e.ctrlKey||e.metaKey||!host.isConnected||host.hidden)return; const path=e.composedPath();if(path.some(n=>n instanceof HTMLElement&&(n.isContentEditable||/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(n.tagName))))return;const actions={KeyA:()=>markBoundary('a'),KeyB:()=>markBoundary('b'),KeyL:toggleLoop,ArrowLeft:()=>setRate(state.rate-0.05),ArrowRight:()=>setRate(state.rate+0.05),Space:togglePlay};if(actions[e.code]){e.preventDefault();e.stopImmediatePropagation();actions[e.code]();} }
-  document.addEventListener('keydown',onKey,true);
+  const shortcutButtons = new Map(
+    Array.from(root.querySelectorAll('button[aria-keyshortcuts]'), button => [button.getAttribute('aria-keyshortcuts'), button])
+  );
+  let handledSpaceDown = false;
+  function onKey(event) {
+    const space = event.key === ' ' || event.code === 'Space';
+    if (space && !event.repeat) handledSpaceDown = false;
+    if (!host.isConnected || host.hidden || !loaded || ad || !video || event.defaultPrevented ||
+        event.isComposing || event.keyCode === 229 || event.altKey || event.shiftKey || event.ctrlKey || event.metaKey) return;
+
+    let shortcut = space ? 'Space' : event.key;
+    if (shortcut === '₩' || shortcut === '￦') {
+      shortcut = '\\';
+    }
+    const button = shortcutButtons.get(shortcut);
+    if (!button || button.disabled || button.closest('[hidden]')) return;
+    const editing = event.composedPath().some(node => node instanceof HTMLElement &&
+      (node.isContentEditable || node.matches('input, textarea, select, [role="textbox"], [role="searchbox"], [role="combobox"]')));
+    if (editing) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (space) handledSpaceDown = true;
+    if (!event.repeat) button.click();
+  }
+  window.addEventListener('keydown', onKey, true);
+  // The player and focused buttons can also act on Space release.
+  window.addEventListener('keyup', event => {
+    if (!handledSpaceDown || (event.key !== ' ' && event.code !== 'Space')) return;
+    handledSpaceDown = false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
   function onPlay() {
     if (mode === 'drums') {
       token++;
